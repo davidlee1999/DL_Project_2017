@@ -40,8 +40,6 @@ def read_and_decode(filename_queue):
 
 
 def inputs(train, batch_size, file_source):
-  # filename = os.path.join(RECORD_DIR,
-  #                         TRAIN_FILE if train else VALID_FILE)
 
   if file_source == "train_one":
     filename = os.path.join(RECORD_DIR, TRAIN_FILE_ONE)
@@ -87,7 +85,7 @@ def _fc_bias(name, shape):
     var = tf.get_variable(name, shape, initializer = initializer, dtype = tf.float32)
   return var
 
-
+### DNN building function.
 def build_net(image_one, image_two):
   
   with tf.variable_scope("one_1") as scope:
@@ -149,36 +147,50 @@ def build_net(image_one, image_two):
     matrix = _fc_matrix("matrix", [10, 48])
     bias = _fc_bias("bias", [10, 1])
     concatinated = tf.concat((fc_one_exclu_4, common_4), 0, name = "concat")
-    pre_activation = tf.add(tf.matmul(matrix, concatinated), bias)
-    fc_one_5 = tf.nn.relu(pre_activation, name = scope.name)
+    fc_one_5 = tf.add(tf.matmul(matrix, concatinated), bias)
 
   with tf.variable_scope("two_5") as scope:
     matrix = _fc_matrix("matrix", [10, 48])
     bias = _fc_bias("bias", [10, 1])
     concatinated = tf.concat((fc_two_exclu_4, common_4), 0, name = "concat")
-    pre_activation = tf.add(tf.matmul(matrix, concatinated), bias)
-    fc_two_5 = tf.nn.relu(pre_activation, name = scope.name)
+    fc_two_5 = tf.add(tf.matmul(matrix, concatinated), bias)
 
   return fc_one_5, fc_two_5
 
 
+### Calculate loss by cross-entropy.
+### IMPORTANT NOTE.
+### Before using tf.nn.softmax_cross_entropy_with_logits
+### change the shape from
+### [ img 1   img 2   img 3  ...   img n]
+### [   x       x       x             x ]
+### [  ...     ...     ...           ...]
+### [   x       x       x             x ]
+### back to
+### [ img 1 : x x x x x x x x ]
+### [ img 2 : x x x x x x x x ]
+### [ ...                  ...]
+### [ img n : x x x x x x x x ]
+### to match the dimension.
 def loss(logits_one, logits_two, label_one, label_two):
-
+  logits_one_transposed = tf.transpose(logits_one)
+  logits_two_transposed = tf.transpose(logits_two)
+  label_one_transposed = tf.transpose(label_one)
+  label_two_transposed = tf.transpose(label_two)
   with tf.variable_scope("one_cross_entropy") as scope:
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = label_one, logits = logits_one, name='corss_entropy_per_example')
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = label_one_transposed, 
+                    logits = logits_one_transposed, name='corss_entropy_per_example')
     loss_one = tf.reduce_mean(cross_entropy, name='cross_entropy')
-    # tf.add_to_collection('losses', cross_entropy_mean)
-    # loss_one = tf.add_n(tf.get_collection('losses'), name='total_loss')
 
   with tf.variable_scope("two_cross_entropy") as scope:
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = label_two, logits = logits_two, name='corss_entropy_per_example')
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels = label_two_transposed, 
+                     logits = logits_two_transposed, name='corss_entropy_per_example')
     loss_two = tf.reduce_mean(cross_entropy, name='cross_entropy')
-    # tf.add_to_collection('losses', cross_entropy_mean)
-    # loss_two = tf.add_n(tf.get_collection('losses'), name='total_loss')
 
   return loss_one, loss_two
 
 
+### Attach the optimizers to two nets.
 def training(loss_one, loss_two):
   # optimizer_one = tf.train.AdamOptimizer(1e-4)
   # optimizer_two = tf.train.AdamOptimizer(1e-4)
