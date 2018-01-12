@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="concat_test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="config.py" />
     <Compile Include="convert_to_tfrecords.py">
       <SubType>Code</SubType>

@@ -1,3 +1,0 @@
-model_checkpoint_path: "captcha-0"
-all_model_checkpoint_paths: "..\\captcha_train_one\\captcha-0"
-all_model_checkpoint_paths: "captcha-0"
