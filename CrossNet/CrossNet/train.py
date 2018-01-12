@@ -97,7 +97,7 @@ def run_train():
         ### Output the status after 100 batchs.
         if step % 100 == 0:
           print('>> Step %d run_train: loss_one = %.2f, loss_two = %.2f (%.3f sec)' % (step, loss_value_one,
-                                                     0, duration))
+                                                     loss_value_two, duration))
         ### Save a checkpoint after 5000 batchs.
         if step % 5000 == 0:
           print('>> %s Saving in %s' % (datetime.now(), CHECKPOINT_ONE))
