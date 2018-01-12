@@ -81,6 +81,11 @@ def run_train():
 
     sess.run(init_op)
 
+    #eval_one = sess.run([captcha.evaluation(logits_one, label_one)])
+    #eval_two = sess.run([captcha.evaluation(logits_two, label_two)])
+    #print('>> Step %d run_train: accr_one = %.2f, accr_two = %.2f (%.3f sec)' % (step, eval_one,
+    #                                                 eval_two, duration))
+
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     try:
@@ -98,6 +103,10 @@ def run_train():
         if step % 100 == 0:
           print('>> Step %d run_train: loss_one = %.2f, loss_two = %.2f (%.3f sec)' % (step, loss_value_one,
                                                      loss_value_two, duration))
+          eval_one = sess.run([captcha.evaluation(logits_one, label_one)])
+          eval_two = sess.run([captcha.evaluation(logits_two, label_two)])
+          print('>> Step %d run_train: accr_one = %.2f, accr_two = %.2f (%.3f sec)' % (step, eval_one[0],
+                                                     eval_two[0], duration))
         ### Save a checkpoint after 5000 batchs.
         if step % 5000 == 0:
           print('>> %s Saving in %s' % (datetime.now(), CHECKPOINT_ONE))

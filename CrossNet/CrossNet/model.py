@@ -318,8 +318,8 @@ def training(loss_one, loss_two):
 
 
 def evaluation(logits, labels):
-  correct_prediction = tf.equal(tf.argmax(logits,2), tf.argmax(labels,2))
-  correct_batch = tf.reduce_mean(tf.cast(correct_prediction, tf.int32), 1)
+  correct_prediction = tf.equal(tf.argmax(logits,0), tf.argmax(labels,0))
+  correct_batch = tf.reduce_mean(tf.cast(correct_prediction, tf.int32), 0)
   return tf.reduce_sum(tf.cast(correct_batch, tf.float32))
 
 
