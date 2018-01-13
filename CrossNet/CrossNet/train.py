@@ -18,6 +18,7 @@ CLASSES_NUM = 10
 CHARS_NUM = 1
 
 RECORD_DIR = "./data"
+VISUAL_DIR = "./vlog"
 TRAIN_FILE_ONE = "train_one.tfrecords"
 VALID_FILE_ONE = "valid_one.tfrecords"
 TRAIN_FILE_TWO = "train_two.tfrecords"
@@ -69,6 +70,15 @@ def run_train():
     ### Use softmax and cross-entropy to calculate loss.
     loss_one, loss_two = captcha.loss(logits_one, logits_two, label_one, label_two)
 
+    eval_one = captcha.correct_rate(logits_one, label_one)
+    eval_two = captcha.correct_rate(logits_two, label_two)
+    tf.summary.scalar('loss_one', loss_one)
+    tf.summary.scalar('loss_two', loss_two)
+    tf.summary.scalar('eval_one', eval_one)
+    tf.summary.scalar('eval_two', eval_two)
+
+    sum_merged = tf.summary.merge_all()
+
     ### Attach the optimizers to two nets.
     train_op_one, train_op_two = captcha.training(loss_one, loss_two)
 
@@ -85,6 +95,8 @@ def run_train():
     #eval_two = sess.run([captcha.evaluation(logits_two, label_two)])
     #print('>> Step %d run_train: accr_one = %.2f, accr_two = %.2f (%.3f sec)' % (step, eval_one,
     #                                                 eval_two, duration))
+    ### visualize the compute graph
+    train_summary_writer = tf.summary.FileWriter(VISUAL_DIR, tf.get_default_graph())
 
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -94,8 +106,21 @@ def run_train():
         start_time = time.time()
 
         ### Run a batch to train.
-        _, loss_value_one = sess.run([train_op_one, loss_one])
-        _, loss_value_two = sess.run([train_op_two, loss_two])
+        ### Save a runtime_metadata after 1000 batches.
+        summary_scl = None
+        if step % 1000 == 0:
+          run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
+          run_meta = tf.RunMetadata()
+          summary_scl, _, loss_value_one = sess.run(
+            [sum_merged, train_op_one, loss_one],
+            options=run_options, run_metadata=run_meta)
+          summary_scl, _, loss_value_two = sess.run(
+            [sum_merged, train_op_two, loss_two],
+            options=run_options, run_metadata=run_meta)
+          train_summary_writer.add_run_metadata(run_meta, 'step%06d' % step, global_step= step)
+        else:
+          summary_scl, _, loss_value_one = sess.run([sum_merged, train_op_one, loss_one])
+          summary_scl, _, loss_value_two = sess.run([sum_merged, train_op_two, loss_two])
 
         duration = time.time() - start_time
 
@@ -103,10 +128,11 @@ def run_train():
         if step % 100 == 0:
           print('>> Step %d run_train: loss_one = %.2f, loss_two = %.2f (%.3f sec)' % (step, loss_value_one,
                                                      loss_value_two, duration))
-          eval_one = sess.run(captcha.correct_rate(logits_one, label_one))
-          eval_two = sess.run(captcha.correct_rate(logits_two, label_two))
-          print('>> Step %d run_train: accr_one = %.2f, accr_two = %.2f (%.3f sec)' % (step, eval_one,
-                                                     eval_two, duration))
+          summary_scl, eval_value_one = sess.run([sum_merged, eval_one])
+          summary_scl, eval_value_two = sess.run([sum_merged, eval_two])
+          train_summary_writer.add_summary(summary_scl, global_step= step)
+          print('>> Step %d run_train: accr_one = %.2f, accr_two = %.2f (%.3f sec)' % (step, eval_value_one,
+                                                     eval_value_two, duration))
         ### Save a checkpoint after 5000 batchs.
         if step % 5000 == 0:
           print('>> %s Saving in %s' % (datetime.now(), CHECKPOINT_ONE))
@@ -129,6 +155,7 @@ def run_train():
     finally:
       coord.request_stop()
     coord.join(threads)
+    train_summary_writer.close()
     sess.close()
 
 
