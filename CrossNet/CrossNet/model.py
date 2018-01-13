@@ -317,10 +317,18 @@ def training(loss_one, loss_two):
   return train_op_one, train_op_two
 
 
-def evaluation(logits, labels):
+def correct_num(logits, labels):
   correct_prediction = tf.equal(tf.argmax(logits,0), tf.argmax(labels,0))
-  correct_batch = tf.reduce_mean(tf.cast(correct_prediction, tf.int32), 0)
-  return tf.reduce_sum(tf.cast(correct_batch, tf.float32))
+  return tf.reduce_sum(tf.cast(correct_prediction, tf.float32))
+
+
+def correct_rate(logits, labels):
+  correct_prediction = tf.equal(tf.argmax(logits,0), tf.argmax(labels,0))
+  return tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+def soft_max(logits):
+  logits_transposed = tf.transpose(logits)
+  return tf.transpose(tf.nn.softmax(logits_transposed))
 
 
 def output(logits):

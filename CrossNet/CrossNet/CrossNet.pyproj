@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>968e6080-3a11-4dfd-9ae5-402f84db8cc5</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>train.py</StartupFile>
+    <StartupFile>eval.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,11 +25,12 @@
     <Compile Include="concat_test.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="config.py" />
     <Compile Include="convert_to_tfrecords.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CrossNet.py" />
+    <Compile Include="eval.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="model.py">
       <SubType>Code</SubType>
     </Compile>
