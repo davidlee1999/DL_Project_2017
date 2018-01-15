@@ -17,6 +17,8 @@ IMAGE_HEIGHT = 28
 CLASSES_NUM = 10
 CHARS_NUM = 1
 
+### "M1" means default, "M2" means train together(loss = loss1+loss2)
+TRAIN_METHOD = "M2"
 RECORD_DIR = "./data"
 VISUAL_DIR = "./vlog"
 TRAIN_FILE_ONE = "train_one.tfrecords"
@@ -80,7 +82,7 @@ def run_train():
     sum_merged = tf.summary.merge_all()
 
     ### Attach the optimizers to two nets.
-    train_op_one, train_op_two = captcha.training(loss_one, loss_two)
+    train_op_one, train_op_two, train_op_both = captcha.training(loss_one, loss_two)
 
     saver = tf.train.Saver(tf.global_variables())
 
@@ -108,19 +110,24 @@ def run_train():
         ### Run a batch to train.
         ### Save a runtime_metadata after 1000 batches.
         summary_scl = None
-        if step % 1000 == 0:
-          run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
-          run_meta = tf.RunMetadata()
-          summary_scl, _, loss_value_one = sess.run(
-            [sum_merged, train_op_one, loss_one],
-            options=run_options, run_metadata=run_meta)
-          summary_scl, _, loss_value_two = sess.run(
-            [sum_merged, train_op_two, loss_two],
-            options=run_options, run_metadata=run_meta)
-          train_summary_writer.add_run_metadata(run_meta, 'step%06d' % step, global_step= step)
-        else:
-          summary_scl, _, loss_value_one = sess.run([sum_merged, train_op_one, loss_one])
-          summary_scl, _, loss_value_two = sess.run([sum_merged, train_op_two, loss_two])
+
+        ### Different train method
+        if TRAIN_METHOD == "M1":
+          if step % 1000 == 0:
+            run_options = tf.RunOptions(trace_level = tf.RunOptions.FULL_TRACE)
+            run_meta = tf.RunMetadata()
+            summary_scl, _, loss_value_one = sess.run(
+              [sum_merged, train_op_one, loss_one],
+              options=run_options, run_metadata=run_meta)
+            summary_scl, _, loss_value_two = sess.run(
+              [sum_merged, train_op_two, loss_two],
+              options=run_options, run_metadata=run_meta)
+            train_summary_writer.add_run_metadata(run_meta, 'step%06d' % step, global_step= step)
+          else:
+            summary_scl, _, loss_value_one = sess.run([sum_merged, train_op_one, loss_one])
+            summary_scl, _, loss_value_two = sess.run([sum_merged, train_op_two, loss_two])
+        elif TRAIN_METHOD == "M2":
+          summary_scl, _, loss_value_one, loss_value_two = sess.run([sum_merged, train_op_both, loss_one, loss_two])
 
         duration = time.time() - start_time
 
