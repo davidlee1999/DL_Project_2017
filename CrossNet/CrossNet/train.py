@@ -16,9 +16,14 @@ IMAGE_WIDTH = 28
 IMAGE_HEIGHT = 28
 CLASSES_NUM = 10
 CHARS_NUM = 1
+### SET DROPOUT RATE
+DROPOUT_RATE = 1
+### SET REGULARIZATION RATE
+REGULARIZATION_RATE = 0.00005
+
 
 ### "M1" means default, "M2" means train together(loss = loss1+loss2)
-TRAIN_METHOD = "M2"
+TRAIN_METHOD = "M1"
 RECORD_DIR = "./data"
 VISUAL_DIR = "./vlog"
 TRAIN_FILE_ONE = "train_one.tfrecords"
@@ -30,7 +35,7 @@ TRAIN_DIR_TWO = "./data/train_data_two"
 VALID_DIR_ONE = "./data/valid_data_one"
 VALID_DIR_TWO = "./data/valid_data_two"
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 TRAIN_DIR_ONE = "./captcha_train_one"
 CHECKPOINT_ONE = "./captcha_train_one/captcha"
 TRAIN_DIR_TWO = "./captcha_train_two"
@@ -67,9 +72,11 @@ def run_train():
 
     ### Build Net
     ### logits_one and logits_two are the outputs before softmax.
-    logits_one, logits_two = captcha.build_net(image_one, image_two)
+    logits_one, logits_two = captcha.build_net(image_one, image_two,
+                                               dropout_rate = DROPOUT_RATE, regularization_rate = REGULARIZATION_RATE)
 
     ### Use softmax and cross-entropy to calculate loss.
+    reg_loss_1, reg_loss_2 = captcha.reg_loss()
     loss_one, loss_two = captcha.loss(logits_one, logits_two, label_one, label_two)
 
     eval_one = captcha.correct_rate(logits_one, label_one)
@@ -135,6 +142,9 @@ def run_train():
         if step % 100 == 0:
           print('>> Step %d run_train: loss_one = %.2f, loss_two = %.2f (%.3f sec)' % (step, loss_value_one,
                                                      loss_value_two, duration))
+          reg_loss_value_1, reg_loss_value_2 = sess.run([reg_loss_1, reg_loss_2])
+          print('>> Step %d run_train: reg_loss_1 = %.2f, reg_loss_2 = %.2f (%.3f sec)' % (step, reg_loss_value_1,
+                                                                                       reg_loss_value_2, duration))
           summary_scl, eval_value_one = sess.run([sum_merged, eval_one])
           summary_scl, eval_value_two = sess.run([sum_merged, eval_two])
           train_summary_writer.add_summary(summary_scl, global_step= step)

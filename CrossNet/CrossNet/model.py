@@ -7,6 +7,7 @@ import os
 
 ### Choose a network, e.g. "network1", "network2"
 CHOOSE_NETWORK = "network1"
+### SET dropout_rate
 
 IMAGE_WIDTH = 28
 IMAGE_HEIGHT = 28
@@ -90,77 +91,87 @@ def _fc_bias(name, shape):
 
 
 def build_net(image_one, image_two, keep_prob_exclu_one=1, keep_prob_exclu_two=1,
-              keep_prob_common_one=1, keep_prob_common_two=1):
+              keep_prob_common_one=1, keep_prob_common_two=1, dropout_rate = 1, regularization_rate = 0):
   if CHOOSE_NETWORK == "network1":
-    return build_net1(image_one, image_two, keep_prob_exclu_one=1, keep_prob_exclu_two=1,
-              keep_prob_common_one=1, keep_prob_common_two=1)
+    return build_net1(image_one, image_two, keep_prob_exclu_one, keep_prob_exclu_two,
+              keep_prob_common_one, keep_prob_common_two, dropout_rate, regularization_rate)
   elif CHOOSE_NETWORK == "network2":
-    return build_net2(image_one, image_two, keep_prob_exclu_one=1, keep_prob_exclu_two=1,
-              keep_prob_common_one=1, keep_prob_common_two=1)
+    return build_net2(image_one, image_two, keep_prob_exclu_one, keep_prob_exclu_two,
+              keep_prob_common_one, keep_prob_common_two, dropout_rate, regularization_rate)
 
 
 ### Put common neurons at BOTTOM layer of the network
 def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_two = 1,
-              keep_prob_common_one = 1, keep_prob_common_two = 1):
-  
+              keep_prob_common_one = 1, keep_prob_common_two = 1, dropout_rate = 1, regularization_rate = 0):
+  regularizer = tf.contrib.layers.l2_regularizer(regularization_rate)
+
   with tf.variable_scope("one_1") as scope:
     matrix = _fc_matrix("matrix", [256, 784])
+    tf.add_to_collection('losses_1', regularizer(matrix))
     bias = _fc_bias("bias", [256, 1])
     pre_activation = tf.add(tf.matmul(matrix, image_one), bias)
     fc_one_1 = tf.nn.relu(pre_activation, name = scope.name)
-
+    #fc_one_1 = tf.nn.dropout(fc_one_1, keep_prob = dropout_rate)
 
   with tf.variable_scope("two_1") as scope:
     matrix = _fc_matrix("matrix", [256, 784])
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [256, 1])
     pre_activation = tf.add(tf.matmul(matrix, image_two), bias)
     fc_two_1 = tf.nn.relu(pre_activation, name = scope.name)
-
+    #fc_two_1 = tf.nn.dropout(fc_two_1, keep_prob=dropout_rate)
 
   with tf.variable_scope("one_2") as scope:
     matrix = _fc_matrix("matrix", [128, 256])
+    tf.add_to_collection('losses_1', regularizer(matrix))
     bias = _fc_bias("bias", [128, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_one_1), bias)
     fc_one_2 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_one_2 = tf.nn.dropout(fc_one_2, keep_prob=dropout_rate)
 
   with tf.variable_scope("two_2") as scope:
     matrix = _fc_matrix("matrix", [128, 256])
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [128, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_two_1), bias)
     fc_two_2 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_two_2 = tf.nn.dropout(fc_two_2, keep_prob=dropout_rate)
 
   with tf.variable_scope("one_exclusive_3") as scope:
     matrix = _fc_matrix("matrix", [48, 128])
+    tf.add_to_collection('losses_1', regularizer(matrix))
     bias = _fc_bias("bias", [48, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_one_2), bias)
     fc_exclusive_one_3 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_exclusive_one_3 = tf.nn.dropout(fc_exclusive_one_3, keep_prob=dropout_rate)
 
   with tf.variable_scope("two_exclusive_3") as scope:
     matrix = _fc_matrix("matrix", [48, 128])
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [48, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_two_2), bias)
     fc_exclusive_two_3 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_exclusive_two_3 = tf.nn.dropout(fc_exclusive_two_3, keep_prob=dropout_rate)
 
   with tf.variable_scope("one_common_3") as scope:
     matrix = _fc_matrix("matrix", [64, 128])
+    tf.add_to_collection('losses_1', regularizer(matrix))
     bias = _fc_bias("bias", [64, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_one_2), bias)
     fc_common_one_3 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_common_one_3 = tf.nn.dropout(fc_common_one_3, keep_prob=dropout_rate)
 
   with tf.variable_scope("two_common_3") as scope:
     matrix = _fc_matrix("matrix", [64, 128])
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [64, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_two_2), bias)
     fc_common_two_3 = tf.nn.relu(pre_activation, name = scope.name)
-
+    fc_common_two_3 = tf.nn.dropout(fc_common_two_3, keep_prob=dropout_rate)
 
   with tf.variable_scope("one_exclusive_4") as scope:
     matrix = _fc_matrix("matrix", [32, 48])
+    tf.add_to_collection('losses_1', regularizer(matrix))
     bias = _fc_bias("bias", [32, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_exclusive_one_3), bias)
     fc_exclusive_one_4 = tf.nn.relu(pre_activation, name = scope.name)
@@ -168,6 +179,7 @@ def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_tw
 
   with tf.variable_scope("two_exclusive_4") as scope:
     matrix = _fc_matrix("matrix", [32, 48])
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [32, 1])
     pre_activation = tf.add(tf.matmul(matrix, fc_exclusive_two_3), bias)
     fc_exclusive_two_4 = tf.nn.relu(pre_activation, name = scope.name)
@@ -175,6 +187,8 @@ def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_tw
 
   with tf.variable_scope("common_4") as scope:
     matrix = _fc_matrix("matrix", [48, 64])
+    tf.add_to_collection('losses_1', regularizer(matrix))
+    tf.add_to_collection('losses_2', regularizer(matrix))
     bias = _fc_bias("bias", [48, 1])
     pre_activation_one = tf.add(tf.matmul(matrix, fc_common_one_3), bias)
     pre_activation_two = tf.add(tf.matmul(matrix, fc_common_two_3), bias)
@@ -184,12 +198,14 @@ def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_tw
 
   with tf.variable_scope("one_5") as scope:
     matrix_exclusive = _fc_matrix("matrix_exclusive", [10, 32])
+    tf.add_to_collection('losses_1', regularizer(matrix_exclusive))
     bias_exclusive = _fc_bias("bias_exclusive", [10, 1])
     pre_activation_exclusive = tf.add(tf.matmul(matrix_exclusive, fc_exclusive_one_4), bias_exclusive)
     fc_exclusive_one_5 = tf.nn.relu(pre_activation_exclusive)
     fc_exclusive_one_5_dropped = tf.nn.dropout(fc_exclusive_one_5, keep_prob = keep_prob_exclu_one)
 
     matrix_common = _fc_matrix("matrix_common", [10, 48])
+    tf.add_to_collection('losses_1', regularizer(matrix_common))
     bias_common = _fc_bias("bias_common", [10, 1])
     pre_activation_common = tf.add(tf.matmul(matrix_common, fc_common_one_4), bias_common)
     fc_common_one_5 = tf.nn.relu(pre_activation_common)
@@ -200,12 +216,14 @@ def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_tw
 
   with tf.variable_scope("two_5") as scope:
     matrix_exclusive = _fc_matrix("matrix_exclusive", [10, 32])
+    tf.add_to_collection('losses_2', regularizer(matrix_exclusive))
     bias_exclusive = _fc_bias("bias_exclusive", [10, 1])
     pre_activation_exclusive = tf.add(tf.matmul(matrix_exclusive, fc_exclusive_two_4), bias_exclusive)
     fc_exclusive_two_5 = tf.nn.relu(pre_activation_exclusive)
     fc_exclusive_two_5_dropped = tf.nn.dropout(fc_exclusive_two_5, keep_prob = keep_prob_exclu_two)
 
     matrix_common = _fc_matrix("matrix_common", [10, 48])
+    tf.add_to_collection('losses_2', regularizer(matrix_common))
     bias_common = _fc_bias("bias_common", [10, 1])
     pre_activation_common = tf.add(tf.matmul(matrix_common, fc_common_two_4), bias_common)
     fc_common_two_5 = tf.nn.relu(pre_activation_common)
@@ -302,6 +320,9 @@ def build_net_wrong(image_one, image_two):
 ### [ ...                  ...]
 ### [ img n : x x x x x x x x ]
 ### to match the dimension.
+def reg_loss():
+  return tf.add_n(tf.get_collection('losses_1')), tf.add_n(tf.get_collection('losses_2'))
+
 def loss(logits_one, logits_two, label_one, label_two):
   logits_one_transposed = tf.transpose(logits_one)
   logits_two_transposed = tf.transpose(logits_two)
@@ -317,6 +338,9 @@ def loss(logits_one, logits_two, label_one, label_two):
                      logits = logits_two_transposed, name='corss_entropy_per_example')
     loss_two = tf.reduce_mean(cross_entropy, name='cross_entropy')
 
+  reg_loss_1, reg_loss_2 = reg_loss()
+  loss_one = loss_one + reg_loss_1
+  loss_two = loss_two + reg_loss_2
   return loss_one, loss_two
 
 
