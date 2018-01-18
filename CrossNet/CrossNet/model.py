@@ -91,7 +91,7 @@ def _fc_bias(name, shape):
 
 
 def build_net(image_one, image_two, keep_prob_exclu_one=1, keep_prob_exclu_two=1,
-              keep_prob_common_one=1, keep_prob_common_two=1, dropout_rate = 1, regularization_rate = 0):
+              keep_prob_common_one=1, keep_prob_common_two=1, dropout_rate = 1.0, regularization_rate = 1e-10):
   if CHOOSE_NETWORK == "network1":
     return build_net1(image_one, image_two, keep_prob_exclu_one, keep_prob_exclu_two,
               keep_prob_common_one, keep_prob_common_two, dropout_rate, regularization_rate)
@@ -102,7 +102,7 @@ def build_net(image_one, image_two, keep_prob_exclu_one=1, keep_prob_exclu_two=1
 
 ### Put common neurons at BOTTOM layer of the network
 def build_net1(image_one, image_two, keep_prob_exclu_one = 1, keep_prob_exclu_two = 1,
-              keep_prob_common_one = 1, keep_prob_common_two = 1, dropout_rate = 1, regularization_rate = 0):
+              keep_prob_common_one = 1, keep_prob_common_two = 1, dropout_rate = 1.0, regularization_rate = 1e-10):
   regularizer = tf.contrib.layers.l2_regularizer(regularization_rate)
 
   with tf.variable_scope("one_1") as scope:
@@ -353,7 +353,9 @@ def training(loss_one, loss_two):
   # optimizer_two = tf.train.GradientDescentOptimizer(1e-4)
   train_op_one = optimizer_one.minimize(loss_one)
   train_op_two = optimizer_two.minimize(loss_two)
-  train_op_both = optimizer_both.minimize(loss_one + loss_two)
+  ### Try to force loss1 and loss2 to decrease simultaneously
+  loss_both = tf.sqrt(tf.multiply(loss_one, loss_one) + tf.multiply(loss_two, loss_two))/2.0
+  train_op_both = optimizer_both.minimize(loss_both)
   return train_op_one, train_op_two, train_op_both
 
 

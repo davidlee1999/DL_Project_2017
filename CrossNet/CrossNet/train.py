@@ -19,11 +19,11 @@ CHARS_NUM = 1
 ### SET DROPOUT RATE
 DROPOUT_RATE = 1
 ### SET REGULARIZATION RATE
-REGULARIZATION_RATE = 0.00005
+REGULARIZATION_RATE = 0.00008
 
 
 ### "M1" means default, "M2" means train together(loss = loss1+loss2)
-TRAIN_METHOD = "M1"
+TRAIN_METHOD = "M2"
 RECORD_DIR = "./data"
 VISUAL_DIR = "./vlog"
 TRAIN_FILE_ONE = "train_one.tfrecords"
@@ -35,7 +35,7 @@ TRAIN_DIR_TWO = "./data/train_data_two"
 VALID_DIR_ONE = "./data/valid_data_one"
 VALID_DIR_TWO = "./data/valid_data_two"
 
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 TRAIN_DIR_ONE = "./captcha_train_one"
 CHECKPOINT_ONE = "./captcha_train_one/captcha"
 TRAIN_DIR_TWO = "./captcha_train_two"
